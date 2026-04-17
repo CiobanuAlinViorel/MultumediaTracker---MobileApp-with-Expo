@@ -1,11 +1,9 @@
-import { AudioModule, RecordingPresets } from "expo-audio";
-import * as MediaLibrary from "expo-media-library";
-
-import { Alert } from "react-native";
+import { AudioModule, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
+import * as MediaLibrary from 'expo-media-library';
+import { Alert } from 'react-native';
 
 class CreateAudioService {
 
-    // instance of the service
     static instance: CreateAudioService;
 
     static getInstance() {
@@ -17,56 +15,54 @@ class CreateAudioService {
 
     private constructor() { }
 
-    // private method to save in device memory the recording
-
-    private async saveRecording(recording: any) {
+    public async createAudioRecording() {
         try {
-            const uri = recording.getURI();
-
-            const asset = await MediaLibrary.createAssetAsync(uri);
-
-            await MediaLibrary.createAlbumAsync('Multimedia Tracker', asset, false);
-
-        } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'The recording can\'t be saved. Please try again later.');
-        }
-    }
-
-
-    // method to create a new audio recording
-    async createAudioRecording() {
-        try {
-            const permission = await AudioModule.requestRecordingPermissionsAsync();
+            const permission = await requestRecordingPermissionsAsync();
 
             if (!permission.granted) {
-                Alert.alert('The permission is denied', 'Please allow the app to access the microphone to create a recording.');
+                Alert.alert(
+                    'Permission denied',
+                    'Please allow the app to access the microphone to record audio.'
+                );
                 return;
             }
 
-            const recording = await AudioModule.Recording.createAsync({
-                ...RecordingPresets.HIGH_QUALITY,
-            });
+            const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
+            await recorder.prepareToRecordAsync();
+            recorder.record();
 
-            return recording;
+            return recorder;
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'The recording can\'t be created. Please try again later.');
+            Alert.alert('Error', 'The recording could not be started. Please try again.');
         }
     }
 
-    async stopRecording(recording: any) {
+    public async stopRecording(recorder: any | null) {
         try {
-            if (!recording) {
-                Alert.alert('No recording', 'There is no recording to stop.');
+            if (!recorder) {
+                Alert.alert('No recording', 'There is no active recording to stop.');
                 return;
             }
-            await recording.stopAndSaveAsync();
 
-            await this.saveRecording(recording);
+            await recorder.stop();
+
+            // Save to media library — non-fatal, Expo Go restricts this
+            const uri: string | null = recorder.uri;
+            if (uri) {
+                try {
+                    const { status } = await MediaLibrary.requestPermissionsAsync();
+                    if (status === 'granted') {
+                        const asset = await MediaLibrary.createAssetAsync(uri);
+                        await MediaLibrary.createAlbumAsync('Multimedia Tracker', asset, false);
+                    }
+                } catch (saveError) {
+                    console.warn('Could not save to media library:', saveError);
+                }
+            }
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'The recording can\'t be stopped. Please try again later.');
+            Alert.alert('Error', 'The recording could not be stopped. Please try again.');
         }
     }
 }

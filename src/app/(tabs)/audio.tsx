@@ -1,15 +1,5 @@
-
 import AudioPage from '@/src/features/audio/ui/components/AudioPage';
 
-
-
-
-export default function HomeScreen() {
-
-
-  return (
-    <>
-      <AudioPage />
-    </>
-  );
+export default function AudioScreen() {
+    return <AudioPage />;
 }

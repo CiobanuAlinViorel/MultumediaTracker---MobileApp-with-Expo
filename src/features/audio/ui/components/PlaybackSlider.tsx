@@ -1,15 +1,27 @@
 import { useRef } from 'react';
-import { PanResponder, Text, View } from 'react-native';
-import { formatDuration } from '../hooks/useAudioUIHelper';
+import { PanResponder, View } from 'react-native';
+import useAudioStore from '../hooks/useAudioStore';
 
 type PlaybackSliderProps = {
-    position: number;   // seconds
-    duration: number;   // seconds
+    duration: number;
     onSeek: (seconds: number) => void;
+    isActive: boolean;
 };
 
-const PlaybackSlider = ({ position, duration, onSeek }: PlaybackSliderProps) => {
+const PlaybackSlider = ({ duration: itemDuration, onSeek, isActive }: PlaybackSliderProps) => {
+    const playbackPosition = useAudioStore((s) => s.playbackPosition);
+    const playbackDuration = useAudioStore((s) => s.playbackDuration);
+
+    const duration = isActive && playbackDuration > 0 ? playbackDuration : itemDuration;
+    const position = isActive ? playbackPosition : 0;
+
     const trackWidthRef = useRef(0);
+    const durationRef = useRef(duration);
+    durationRef.current = duration;
+
+    const onSeekRef = useRef(onSeek);
+    onSeekRef.current = onSeek;
+
     const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
 
     const panResponder = useRef(
@@ -18,58 +30,42 @@ const PlaybackSlider = ({ position, duration, onSeek }: PlaybackSliderProps) => 
             onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: (e) => {
                 const x = Math.max(0, e.nativeEvent.locationX);
-                onSeek(Math.min((x / trackWidthRef.current) * duration, duration));
+                onSeekRef.current(Math.min((x / trackWidthRef.current) * durationRef.current, durationRef.current));
             },
             onPanResponderMove: (e) => {
                 const x = Math.max(0, e.nativeEvent.locationX);
-                onSeek(Math.min((x / trackWidthRef.current) * duration, duration));
+                onSeekRef.current(Math.min((x / trackWidthRef.current) * durationRef.current, durationRef.current));
             },
         })
     ).current;
 
     return (
-        <View style={{ gap: 6 }}>
-            {/* Track */}
-            <View
-                {...panResponder.panHandlers}
-                onLayout={(e) => { trackWidthRef.current = e.nativeEvent.layout.width; }}
-                style={{ height: 24, justifyContent: 'center' }}
-            >
-                {/* Background track */}
-                <View style={{ height: 4, backgroundColor: '#374151', borderRadius: 2 }}>
-                    {/* Filled portion + thumb */}
+        <View
+            {...panResponder.panHandlers}
+            onLayout={(e) => { trackWidthRef.current = e.nativeEvent.layout.width; }}
+            style={{ height: 24, justifyContent: 'center' }}
+        >
+            <View style={{ height: 3, backgroundColor: '#ddd', borderRadius: 2 }}>
+                <View
+                    style={{
+                        width: `${progress * 100}%`,
+                        height: '100%',
+                        backgroundColor: '#6b4fa8',
+                        borderRadius: 2,
+                    }}
+                >
                     <View
                         style={{
-                            width: `${progress * 100}%`,
-                            height: '100%',
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 2,
+                            position: 'absolute',
+                            right: -6,
+                            top: -4.5,
+                            width: 12,
+                            height: 12,
+                            borderRadius: 6,
+                            backgroundColor: '#6b4fa8',
                         }}
-                    >
-                        {/* Thumb */}
-                        <View
-                            style={{
-                                position: 'absolute',
-                                right: -6,
-                                top: -4,
-                                width: 12,
-                                height: 12,
-                                borderRadius: 6,
-                                backgroundColor: '#fff',
-                            }}
-                        />
-                    </View>
+                    />
                 </View>
-            </View>
-
-            {/* Time labels */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#6b7280', fontSize: 11 }}>
-                    {formatDuration(Math.floor(position))}
-                </Text>
-                <Text style={{ color: '#6b7280', fontSize: 11 }}>
-                    {formatDuration(Math.floor(duration))}
-                </Text>
             </View>
         </View>
     );

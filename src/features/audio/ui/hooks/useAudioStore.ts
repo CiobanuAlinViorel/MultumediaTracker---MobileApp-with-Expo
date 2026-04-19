@@ -17,6 +17,7 @@ interface AudioState {
     setIsModalOpen: (isOpen: boolean) => void;
     setPlaybackPosition: (position: number) => void;
     setPlaybackDuration: (duration: number) => void;
+    setRecordings: (recordings: RecordingItem[]) => void;
     addRecording: (recording: RecordingItem) => void;
     deleteRecording: (id: string) => void;
     setCurrentRecording: (recording: any | null) => void;
@@ -39,6 +40,7 @@ const useAudioStore = create<AudioState>((set) => ({
     setIsModalOpen: (isModalOpen) => set({ isModalOpen }),
     setPlaybackPosition: (playbackPosition) => set({ playbackPosition }),
     setPlaybackDuration: (playbackDuration) => set({ playbackDuration }),
+    setRecordings: (recordings) => set({ recordings }),
     addRecording: (recording) =>
         set((state) => ({ recordings: [...state.recordings, recording] })),
     deleteRecording: (id) =>

@@ -1,8 +1,9 @@
 import { FlatList, Modal, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RecordingItem } from '../../types';
-import { formatDuration } from '../hooks/useAudioUIHelper';
 import PlaybackSlider from './PlaybackSlider';
+
+const PURPLE = '#6b4fa8';
 
 type RecordsListProps = {
     visible: boolean;
@@ -10,13 +11,21 @@ type RecordsListProps = {
     recordings: RecordingItem[];
     currentlyPlayingUri: string | null;
     isPlaying: boolean;
-    playbackPosition: number;
-    playbackDuration: number;
     onPlay: (uri: string) => void;
     onStop: () => void;
     onSeek: (seconds: number) => void;
     onDelete: (id: string) => void;
 };
+
+const TrashIcon = () => (
+    <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 18, color: '#888' }}>🗑</Text>
+    </View>
+);
+
+const PlayIcon = ({ isPlaying }: { isPlaying: boolean }) => (
+    <Text style={{ fontSize: 16, color: PURPLE, width: 20 }}>{isPlaying ? '⏸' : '▶'}</Text>
+);
 
 const RecordsList = ({
     visible,
@@ -24,8 +33,6 @@ const RecordsList = ({
     recordings,
     currentlyPlayingUri,
     isPlaying,
-    playbackPosition,
-    playbackDuration,
     onPlay,
     onStop,
     onSeek,
@@ -38,77 +45,60 @@ const RecordsList = ({
             presentationStyle="pageSheet"
             onRequestClose={onClose}
         >
-            <SafeAreaView className="flex-1 bg-gray-950">
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
                 {/* Header */}
-                <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-800">
-                    <Text className="text-white text-xl font-bold">My Recordings</Text>
-                    <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-                        <Text className="text-blue-400 text-base font-medium">Done</Text>
-                    </TouchableOpacity>
+                <View style={{ paddingHorizontal: 20, paddingVertical: 16 }}>
+                    <Text style={{ fontSize: 22, fontWeight: '700', color: '#1a1a1a' }}>Recordings</Text>
                 </View>
 
                 {recordings.length === 0 ? (
-                    <View className="flex-1 items-center justify-center">
-                        <Text className="text-gray-500 text-base">No recordings yet</Text>
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#999', fontSize: 15 }}>No recordings yet</Text>
                     </View>
                 ) : (
                     <FlatList
                         data={recordings}
                         keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ padding: 16, gap: 12 }}
-                        renderItem={({ item }) => {
+                        renderItem={({ item, index }) => {
                             const isActive = currentlyPlayingUri === item.uri;
                             const isCurrentlyPlaying = isActive && isPlaying;
 
                             return (
-                                <View className="bg-gray-900 rounded-2xl p-4" style={{ gap: 12 }}>
-                                    {/* Top row: info + actions */}
-                                    <View className="flex-row items-center">
-                                        <View className="flex-1 gap-1 mr-4">
+                                <View>
+                                    {index > 0 && (
+                                        <View style={{ height: 1, backgroundColor: '#ebebeb', marginHorizontal: 20 }} />
+                                    )}
+                                    <View style={{ paddingHorizontal: 20, paddingVertical: 14, gap: 10 }}>
+                                        {/* Name row */}
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                             <Text
-                                                className="text-white font-medium text-base"
+                                                style={{ flex: 1, fontSize: 14, color: '#1a1a1a', fontWeight: '500', marginRight: 12 }}
                                                 numberOfLines={1}
                                             >
                                                 {item.name}
                                             </Text>
-                                            <Text className="text-gray-500 text-sm">
-                                                {formatDuration(item.duration)}
-                                            </Text>
+                                            <TouchableOpacity onPress={() => onDelete(item.id)} hitSlop={8}>
+                                                <TrashIcon />
+                                            </TouchableOpacity>
                                         </View>
 
-                                        <View className="flex-row gap-3 items-center">
+                                        {/* Play + Slider row */}
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                             <TouchableOpacity
-                                                onPress={() =>
-                                                    isCurrentlyPlaying ? onStop() : onPlay(item.uri)
-                                                }
-                                                className={`px-4 py-2 rounded-xl ${isCurrentlyPlaying ? 'bg-yellow-600' : 'bg-blue-600'}`}
-                                                activeOpacity={0.7}
+                                                onPress={() => isCurrentlyPlaying ? onStop() : onPlay(item.uri)}
+                                                hitSlop={8}
                                             >
-                                                <Text className="text-white text-sm font-semibold">
-                                                    {isCurrentlyPlaying ? 'Stop' : 'Play'}
-                                                </Text>
+                                                <PlayIcon isPlaying={isCurrentlyPlaying} />
                                             </TouchableOpacity>
-
-                                            <TouchableOpacity
-                                                onPress={() => onDelete(item.id)}
-                                                className="px-4 py-2 rounded-xl bg-red-700"
-                                                activeOpacity={0.7}
-                                            >
-                                                <Text className="text-white text-sm font-semibold">
-                                                    Delete
-                                                </Text>
-                                            </TouchableOpacity>
+                                            <View style={{ flex: 1 }}>
+                                                <PlaybackSlider
+                                                    duration={item.duration}
+                                                    onSeek={onSeek}
+                                                    isActive={isActive}
+                                                />
+                                            </View>
                                         </View>
                                     </View>
-
-                                    {/* Slider — only visible for the active track */}
-                                    {isActive && (
-                                        <PlaybackSlider
-                                            position={playbackPosition}
-                                            duration={playbackDuration > 0 ? playbackDuration : item.duration}
-                                            onSeek={onSeek}
-                                        />
-                                    )}
                                 </View>
                             );
                         }}

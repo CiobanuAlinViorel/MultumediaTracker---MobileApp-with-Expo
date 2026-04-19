@@ -3,6 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import useAudioListeners from '../hooks/useAudioListeners';
 import RecordsList from './RecordsList';
 
+const PURPLE = '#6b4fa8';
+
 const AudioPage = () => {
     const {
         isRecording,
@@ -11,8 +13,6 @@ const AudioPage = () => {
         recordings,
         currentlyPlayingUri,
         isPlaying,
-        playbackPosition,
-        playbackDuration,
         onStartRecording,
         onStopRecording,
         onOpenModal,
@@ -24,68 +24,59 @@ const AudioPage = () => {
     } = useAudioListeners();
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-950">
-            <View className="flex-1 items-center justify-center gap-10 px-6">
-                <Text className="text-white text-3xl font-bold tracking-wide">
-                    Audio Recorder
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f0fc' }}>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 40, paddingHorizontal: 24 }}>
+                {/* Timer */}
+                <Text style={{ fontSize: 64, fontWeight: '700', color: '#2d2d2d', letterSpacing: 4, fontVariant: ['tabular-nums'] }}>
+                    {isRecording ? formattedDuration.replace(':', ' : ') : '00 : 00'}
                 </Text>
 
-                {/* Recording status / timer */}
-                <View className="items-center gap-3 h-24 justify-center">
-                    {isRecording ? (
-                        <>
-                            <View className="w-3 h-3 rounded-full bg-red-500" />
-                            <Text className="text-red-400 text-5xl font-mono font-semibold tracking-widest">
-                                {formattedDuration}
-                            </Text>
-                            <Text className="text-gray-400 text-sm uppercase tracking-widest">
-                                Recording
-                            </Text>
-                        </>
-                    ) : (
-                        <Text className="text-gray-600 text-base">
-                            Press Start to begin recording
-                        </Text>
-                    )}
-                </View>
-
-                {/* Record controls */}
-                <View className="flex-row gap-6">
+                {/* Record / Stop buttons */}
+                <View style={{ flexDirection: 'row', gap: 16 }}>
                     <TouchableOpacity
                         onPress={onStartRecording}
                         disabled={isRecording}
-                        className={`px-10 py-4 rounded-full ${isRecording ? 'bg-gray-800' : 'bg-green-600'}`}
-                        activeOpacity={0.7}
+                        activeOpacity={0.75}
+                        style={{
+                            paddingHorizontal: 36,
+                            paddingVertical: 14,
+                            borderRadius: 999,
+                            backgroundColor: isRecording ? '#d1c4e9' : PURPLE,
+                        }}
                     >
-                        <Text className={`text-base font-semibold ${isRecording ? 'text-gray-600' : 'text-white'}`}>
-                            Start
-                        </Text>
+                        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Record</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={onStopRecording}
                         disabled={!isRecording}
-                        className={`px-10 py-4 rounded-full ${!isRecording ? 'bg-gray-800' : 'bg-red-600'}`}
-                        activeOpacity={0.7}
+                        activeOpacity={0.75}
+                        style={{
+                            paddingHorizontal: 36,
+                            paddingVertical: 14,
+                            borderRadius: 999,
+                            backgroundColor: '#e0e0e0',
+                            borderWidth: !isRecording ? 0 : 0,
+                        }}
                     >
-                        <Text className={`text-base font-semibold ${!isRecording ? 'text-gray-600' : 'text-white'}`}>
-                            Stop
-                        </Text>
+                        <Text style={{ color: isRecording ? '#444' : '#aaa', fontSize: 16, fontWeight: '600' }}>Stop</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Open recordings modal */}
-                {recordings.length > 0 && (
-                    <TouchableOpacity
-                        onPress={onOpenModal}
-                        className="px-8 py-3 bg-blue-700 rounded-full"
-                        activeOpacity={0.7}
-                    >
-                        <Text className="text-white font-medium text-base">
-                            My Recordings ({recordings.length})
-                        </Text>
-                    </TouchableOpacity>
-                )}
+                {/* Recordings button */}
+                <TouchableOpacity
+                    onPress={onOpenModal}
+                    activeOpacity={0.75}
+                    style={{
+                        paddingHorizontal: 32,
+                        paddingVertical: 12,
+                        borderRadius: 999,
+                        borderWidth: 1.5,
+                        borderColor: PURPLE,
+                    }}
+                >
+                    <Text style={{ color: PURPLE, fontSize: 15, fontWeight: '500' }}>Recordings</Text>
+                </TouchableOpacity>
             </View>
 
             <RecordsList
@@ -94,8 +85,6 @@ const AudioPage = () => {
                 recordings={recordings}
                 currentlyPlayingUri={currentlyPlayingUri}
                 isPlaying={isPlaying}
-                playbackPosition={playbackPosition}
-                playbackDuration={playbackDuration}
                 onPlay={onPlay}
                 onStop={onStop}
                 onSeek={onSeek}

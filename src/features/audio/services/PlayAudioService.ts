@@ -19,12 +19,18 @@ class PlayAudioService {
     private constructor() {}
 
     play(uri: string, callbacks: PlaybackCallbacks) {
+        const t0 = performance.now();
         this.stop();
 
         // updateInterval: 100ms gives a smooth slider
         this.player = createAudioPlayer({ uri }, { updateInterval: 100 });
 
+        let firstUpdate = true;
         this.player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+            if (firstUpdate) {
+                console.log(`[timing] play first status update: ${(performance.now() - t0).toFixed(2)}ms`);
+                firstUpdate = false;
+            }
             if (status.didJustFinish) {
                 this.player = null;
                 callbacks.onFinish();
@@ -34,6 +40,7 @@ class PlayAudioService {
         });
 
         this.player.play();
+        console.log(`[timing] play() called: ${(performance.now() - t0).toFixed(2)}ms`);
     }
 
     pause() {

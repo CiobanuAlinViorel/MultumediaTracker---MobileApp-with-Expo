@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { setAudioModeAsync } from 'expo-audio';
+import * as MediaLibrary from 'expo-media-library';
 import useAudioActions from './useAudioActions';
 import useAudioStore from './useAudioStore';
 import { formatDuration } from './useAudioUIHelper';
 import PlayAudioService from '../../services/PlayAudioService';
+import AudioLibraryService from '../../services/AudioLibraryService';
 
 export default function useAudioListeners() {
     const {
@@ -22,6 +24,7 @@ export default function useAudioListeners() {
         isPlaying,
         setIsPlaying,
         recordings,
+        setRecordings,
         playbackPosition,
         playbackDuration,
         setPlaybackPosition,
@@ -37,6 +40,15 @@ export default function useAudioListeners() {
     useEffect(() => {
         setAudioModeAsync({ playsInSilentMode: true }).catch(console.warn);
     }, []);
+
+    const hydrateRecordings = useCallback(async () => {
+        const deviceRecordings = await AudioLibraryService.loadAudioFiles();
+        setRecordings(deviceRecordings);
+    }, [setRecordings]);
+
+    useEffect(() => {
+        void hydrateRecordings();
+    }, [hydrateRecordings]);
 
     useEffect(() => {
         return () => {
@@ -136,12 +148,15 @@ export default function useAudioListeners() {
         setPlaybackPosition(seconds);
     }, [setPlaybackPosition]);
 
-    const onDelete = useCallback((id: string) => {
+    const onDelete = useCallback(async (id: string) => {
         const target = recordings.find((r) => r.id === id);
         if (target && target.uri === currentlyPlayingUri) {
             onStop();
         }
         deleteRecording(id);
+        if (target) {
+            await MediaLibrary.deleteAssetsAsync([target.id]).catch(console.warn);
+        }
     }, [recordings, currentlyPlayingUri, deleteRecording, onStop]);
 
     return {

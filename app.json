@@ -40,6 +40,16 @@
           }
         }
       ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access audio files from your media library.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save recordings to your media library.",
+          "granularPermissions": [
+            "audio"
+          ]
+        }
+      ],
       "expo-audio"
     ],
     "experiments": {
